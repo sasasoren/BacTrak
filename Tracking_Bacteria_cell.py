@@ -8,7 +8,6 @@ from skimage.draw import line
 from statsmodels.distributions.empirical_distribution import ECDF
 import itertools
 from tqdm import tqdm
-import synthetic_split_parent_with_children as sspc
 import json
 from operator import itemgetter
 from collections import Counter
@@ -49,10 +48,16 @@ class Frame:
     """
 
     def __init__(self, image, labeled=None, max_dis_neighbor=85):
+        """
+        Here we initialize the basic characteristics of a frame
+        :param image: ndarray - binary image of the cell
+        :param labeled: ndarray - labeled pixels of each cell with its cell id number.
+        :param max_dis_neighbor: maximum length that we consider a cell as a neighbor.
+        """
         self.max_dis_neighbor = max_dis_neighbor
         self.cells = {}
         self.image = image
-        if labeled.any():
+        if labeled is not None:
             cell_labels = np.sort(np.unique(labeled)[1:])
         else:
             labeled = label(image, connectivity=1)
@@ -945,33 +950,6 @@ def end_finder(cent, img, vec):
         i += 1
 
     return np.array((int(end1[1]), int(end1[0]))), np.array((int(end2[1]), int(end2[0])))
-
-
-def test_for_lambda(lam):
-    # lab0 = cv2.imread('J_label_test.png', 0)
-    # img0 = cv2.imread('J_test.png', 0)
-    # lab1 = cv2.imread('J+_label_test.png', 0)
-    # img1 = cv2.imread('J+_test.png', 0)
-    with open('Images/james_sample/dif_sam/0000.json') as f:
-        json_file = json.load(f)
-
-    fr354 = sspc.Frame(json_file, 354, 'Images/james_sample/dif_sam/0000.json', hierarchy_lookback=0)
-    fr354.draw()
-    fr354.cen_vec()
-    fr360 = sspc.Frame(json_file, 360, 'Images/james_sample/dif_sam/0000.json', hierarchy_lookback=0)
-    fr360.draw()
-    fr360.cen_vec()
-    img0 = fr354.image.copy()
-    img1 = fr360.image.copy()
-    lab0 = fr354.labeled.copy()
-    lab1 = fr360.labeled.copy()
-
-    nst = NoSplitTrack(img0, img1, lab0, lab1, lambda_ovr=lam[0],
-                       lambda_nst=lam[1], lambda_nfl=lam[2])
-    nst.boltzmann_machine_optimization()
-
-    return np.sum(list(map(lambda x: x == nst.registration[x][0], nst.registration.keys()))) /\
-           nst.number_of_cells, lam[0], lam[1], lam[2]
 
 
 def hmn_overlap(pair):
